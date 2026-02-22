@@ -10,13 +10,19 @@ export default defineConfig({
     setupFiles: ['./src/tests/setup.ts'],
   },
   build: {
+    target: 'esnext',
     lib: {
       entry: 'src/index.ts',
       formats: ['es', 'cjs'],
       fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
-      external: ['react', 'react/jsx-runtime', 'react-hook-form'],
+      external: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react-hook-form',
+      ],
     },
   },
 })
