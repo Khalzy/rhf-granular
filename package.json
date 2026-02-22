@@ -2,6 +2,7 @@
   "name": "rhf-granular",
   "version": "0.1.1",
   "description": "",
+  "sideEffects": false,
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -18,7 +19,6 @@
   "files": [
     "dist"
   ],
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -41,5 +41,18 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Khalzy/rhf-granular.git"
-  }
+  },
+  "keywords": [
+    "react",
+    "react-hook-form",
+    "rhf",
+    "performance",
+    "re-render",
+    "form-optimization",
+    "selector",
+    "subscription",
+    "watch",
+    "computed-values",
+    "granular"
+  ]
 }
