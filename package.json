@@ -1,6 +1,6 @@
 {
   "name": "rhf-granular",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
@@ -40,6 +40,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Khalzy/rhf-granular"
+    "url": "git+https://github.com/Khalzy/rhf-granular.git"
   }
 }
