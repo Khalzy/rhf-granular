@@ -1,4 +1,4 @@
-import { type FieldValues, type FieldPath, type Control, get } from "react-hook-form";
+import { type FieldValues, type FieldPath, type Control, get, FieldPathValue } from "react-hook-form";
 import { useFormSelector } from "./useFormSelector";
 
 /**
@@ -6,12 +6,11 @@ import { useFormSelector } from "./useFormSelector";
  * internal get utility for dot-notation path resolution.
  */
 export function useFormValue<
-    TFieldValues extends FieldValues = FieldValues,
-    TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+    TFieldValues extends FieldValues,
+    TFieldName extends FieldPath<TFieldValues>
 >(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    control: Control<any>,
+    control: Control<TFieldValues>,
     name: TFieldName
-): FieldValues {
-    return useFormSelector(control, ({ values }) => get(values, name));
+): FieldPathValue<TFieldValues, TFieldName> {
+    return useFormSelector(control, (state) => get(state.values, name));
 }

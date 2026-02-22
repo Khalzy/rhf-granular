@@ -482,7 +482,13 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
 
     describe('Edge cases', () => {
         it('should handle undefined nested paths', () => {
-            const { result: formResult } = renderHook(() => useForm({
+            const { result: formResult } = renderHook(() => useForm<{
+                optional?: {
+                    nested: {
+                        deep: unknown
+                    }
+                }
+            }>({
                 defaultValues: { optional: undefined }
             }));
 

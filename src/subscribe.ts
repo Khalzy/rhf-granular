@@ -25,7 +25,7 @@ export const subscribeManager = <T = unknown, TFieldValues extends FieldValues =
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error: unknown) {
             // Selector might error on proxy access (e.g., Object.keys, JSON.stringify)
-            // Fallback to subscribing to common keyss
+            // Fallback to subscribing to common keys
             subscriber.watchedKeys.current = new Set(['values', 'errors', 'isDirty', 'isValid', 'touchedFields']);
         }
     }
