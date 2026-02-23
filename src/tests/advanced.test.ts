@@ -237,7 +237,6 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
 
             expect(countResult.current).toBe(2);
 
-            // Verify remaining users
             const remaining = formResult.current.getValues('users');
             expect(remaining).toEqual([
                 { id: 1, name: 'John' },
@@ -252,9 +251,9 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
                 }
             }));
 
-            const { result: firstItemResult } = renderHook(() =>
-                useFormValue(formResult.current.control, 'items.0')
-            );
+            const { result: firstItemResult } = renderHook(() => {
+                return useFormValue(formResult.current.control, 'items.0')
+            });
 
             expect(firstItemResult.current).toBe('first');
 
@@ -396,7 +395,6 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
 
             const initialRenderCount = renderCount;
 
-            // Change second user's name - first user selector should not re-render
             act(() => {
                 formResult.current.setValue('users.1.name', 'Janet');
             });
@@ -423,14 +421,13 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
 
             const initialRenderCount = renderCount;
 
-            // Add another active item - boolean stays true
             act(() => {
                 const current = formResult.current.getValues('items');
                 formResult.current.setValue('items', [...current, { status: 'active' }]);
             });
 
             expect(hasActiveResult.current).toBe(true);
-            expect(renderCount).toBe(initialRenderCount); // No re-render
+            expect(renderCount).toBe(initialRenderCount);
         });
     });
 

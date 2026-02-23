@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it } from 'vitest';
-import { useFormSelector } from '../useFormSelector';
 import { managers } from '../manager';
+import { useFormSelector } from '../useFormSelector';
 
 describe('Manager cleanup', () => {
     it('removes subscriber on unmount', () => {
@@ -22,5 +22,17 @@ describe('Manager cleanup', () => {
         // manager entry removed entirely on last subscriber unmount and removes form control
         expect(managers.get(formResult.current.control)?.subscribers.size).toBeUndefined()
         expect(managers.has(formResult.current.control)).toBe(false)
+    })
+
+    it('two form instances never share manager state', () => {
+        const { result: form1 } = renderHook(() => useForm({ defaultValues: { name: '' } }))
+        const { result: form2 } = renderHook(() => useForm({ defaultValues: { name: '' } }))
+
+        renderHook(() => useFormSelector(form1.current.control, s => s.values.name))
+        renderHook(() => useFormSelector(form2.current.control, s => s.values.name))
+
+        expect(managers.get(form1.current.control)).not.toBe(
+            managers.get(form2.current.control)
+        )
     })
 });
