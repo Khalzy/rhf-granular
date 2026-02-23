@@ -8,16 +8,23 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     }
   },
   "scripts": {
     "test": "vitest",
-    "build": "vite build"
+    "build": "vite build && tsc --emitDeclarationOnly --declaration --outDir dist"
   },
   "files": [
-    "dist"
+    "dist/index.cjs",
+    "dist/index.mjs",
+    "dist/index.d.ts",
+    "dist/index.d.ts.map",
+    "dist/useFormSelector.d.ts",
+    "dist/useFormEffect.d.ts",
+    "dist/useFormValue.d.ts"
   ],
   "author": "",
   "license": "ISC",

@@ -25,22 +25,23 @@ import { Subscriber } from "./types/manager";
  *   }
  * });
  */
-export function useFormEffect(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    control: Control<any>,
-    callback: (state?: Partial<FormState<FieldValues>> & { values: FieldValues }) => void,
+export function useFormEffect<TFieldValues extends FieldValues = FieldValues, T = unknown>(
+    control: Control<TFieldValues>,
+    callback: (state?: Partial<FormState<TFieldValues>> & {
+        values: TFieldValues;
+    }) => void
 ): void {
     const callbackRef = useRef(callback);
     callbackRef.current = callback;
 
     const watchedKeys = useRef<Set<string>>(new Set());
 
-    const stableEffectCallback = useCallback((state?: Partial<FormState<FieldValues>> & { values: FieldValues }) => callbackRef.current(state), [])
+    const stableEffectCallback = useCallback((state?: Partial<FormState<TFieldValues>> & { values: TFieldValues }) => callbackRef.current(state), [])
 
     useEffect(() => {
         const currentState = { ...control._formState, values: control._formValues };
 
-        const subscriber: Subscriber<unknown> = {
+        const subscriber: Subscriber<T, TFieldValues> = {
             callback: stableEffectCallback,
             watchedKeys,
             lastValue: null,

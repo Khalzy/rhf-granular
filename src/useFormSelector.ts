@@ -18,8 +18,7 @@ import { shallow } from "./utils/shallow";
  * });
  */
 export function useFormSelector<TFieldValues extends FieldValues = FieldValues, T = unknown>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    control: Control<any>,
+    control: Control<TFieldValues>,
     selector: (state: Partial<FormState<TFieldValues>> & { values: TFieldValues }) => T,
     options: {
         equalityFn: EqualityFn<T>
@@ -80,7 +79,6 @@ export function useFormSelector<TFieldValues extends FieldValues = FieldValues, 
 
             return () => {
                 unsubscribe()
-                subscriberRef.current = null;
             }
         },
         getSnapshot,
