@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { Control, FieldValues, FormState } from "react-hook-form";
-import { subscribeManager } from "./subscribe";
-import { Subscriber } from "./types/manager";
+import { type Control, type FieldValues, type FormState } from "react-hook-form";
+import { registerSubscriber } from "./registerSubscriber";
+import { selectWithProxy } from "./selectWIthProxy";
+import { EqualityFn, Subscriber } from "./types/manager";
+import { PathMeta } from "./types/pathMeta";
+import { shallow } from "./utils/shallow";
+import { getManager } from "./getManager";
+import { removeSubscriber } from "./removeSubscriber";
 /**
  * Execute side effects in response to form state changes without causing re-renders.
  * 
@@ -25,33 +30,84 @@ import { Subscriber } from "./types/manager";
  *   }
  * });
  */
-export function useFormEffect<TFieldValues extends FieldValues = FieldValues, T = unknown>(
+export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>(
     control: Control<TFieldValues>,
     callback: (state?: Partial<FormState<TFieldValues>> & {
         values: TFieldValues;
-    }) => void
+    }) => void,
+    options: {
+        selector?: (state: Partial<FormState<TFieldValues>> & { values: TFieldValues }) => T,
+        equalityFn?: EqualityFn<T>
+    } = {}
 ): void {
     const callbackRef = useRef(callback);
     callbackRef.current = callback;
 
-    const watchedKeys = useRef<Set<string>>(new Set());
+    const subscriberRef = useRef<Subscriber<T, TFieldValues> | null>(null);
 
-    const stableEffectCallback = useCallback((state?: Partial<FormState<TFieldValues>> & { values: TFieldValues }) => callbackRef.current(state), [])
+    const stableSelectorRef = useRef(options?.selector);
+    stableSelectorRef.current = options?.selector;
+
+    const stableEqualityFnRef = useRef(options?.equalityFn ?? shallow);
+    stableEqualityFnRef.current = options?.equalityFn ?? shallow;
+
+    const lastEffectState = useRef<Partial<FormState<TFieldValues>> & { values: TFieldValues }>({
+        ...control._formState,
+        values: control._formValues as TFieldValues,
+    });
+
+    const watchedKeys = useRef<Set<string>>(new Set());
+    const watchedMeta = useRef<Map<string, PathMeta>>(new Map());
+
+    const stableEffect = useCallback((
+        state?: Partial<FormState<TFieldValues>> & { values: TFieldValues }
+    ) => {
+        callbackRef.current(state)
+        return null
+    }, [])
+
+    const stableSelector = useCallback((
+        state: Partial<FormState<TFieldValues>> & { values: TFieldValues }
+    ) => stableSelectorRef?.current?.(state), [])
+
+
+    const equalityFn = useCallback((
+        a?: T, b?: T | null
+    ): boolean => stableEqualityFnRef.current(a, b) ?? true, [])
 
     useEffect(() => {
-        const currentState = { ...control._formState, values: control._formValues };
+        if (!subscriberRef.current) {
+            const initialState = {
+                ...structuredClone(control._formState),
+                values: structuredClone(control._formValues) as unknown as TFieldValues,
+                defaultValues: structuredClone(control._defaultValues) as unknown as TFieldValues
+            } as Partial<FormState<TFieldValues>> & { values: TFieldValues };
 
-        const subscriber: Subscriber<T, TFieldValues> = {
-            callback: stableEffectCallback,
-            watchedKeys,
-            lastValue: null,
-            lastFormState: currentState,
-            type: 'effect',
-        };
+            const stableSelectorOrEffect = options.selector ? stableSelector : stableEffect
 
-        const unsubscribe = subscribeManager(control, subscriber)
+            const initialValue = selectWithProxy(stableSelectorOrEffect, initialState, watchedKeys, watchedMeta);
 
-        return unsubscribe
+            lastEffectState.current = initialState
+
+            subscriberRef.current = {
+                callback: stableEffect,
+                selector: stableSelector,
+                equalityFn: equalityFn,
+                watchedKeys,
+                watchedMeta,
+                lastValue: initialValue,
+                lastFormState: lastEffectState,
+                type: 'effect',
+                selectorSource: options.selector ? 'user' : 'default'
+            };
+
+            registerSubscriber(control, subscriberRef)
+        } else {
+            subscriberRef.current.callback = stableEffect;
+        }
+
+        const manager = getManager(control)
+        return () => removeSubscriber(control, manager, subscriberRef)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [control]);
 }
