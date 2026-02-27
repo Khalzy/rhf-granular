@@ -11,7 +11,7 @@ import { shallow } from '../utils/shallow';
 describe('Arrays and Nested Objects - Deep Testing', () => {
 
     describe('mutating the arrays', () => {
-        it('Should only re-render on actual state change (shallow equality)', () => {
+        it('Should only re-render on actual state change (shallow equality)', async () => {
             let renderCount = 0
 
             const { result: formResult } = renderHook(() => useForm({
@@ -48,7 +48,7 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
             expect(shallow(data, value.current)).toBe(true)
             expect(renderCount).toBe(initialRenderCount)
 
-            act(() => {
+            await act(async () => {
                 actions.current.append({ name: 'Alex', age: 35 })
             })
 
@@ -65,7 +65,7 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
     describe('Array of primitives', () => {
         it('should handle array of strings validation', async () => {
             const { result } = renderHook(() => {
-                const { control, trigger, formState: { errors }, getValues } = useForm<{
+                const { control, trigger, getValues } = useForm<{
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     tags: any[]
                 }>({
@@ -76,9 +76,8 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
                     }))
                 });
 
-                const { fields, remove } = useFieldArray({ control, name: 'tags' });
+                const { remove } = useFieldArray({ control, name: 'tags' });
 
-                // Use the selector inside the same hook to ensure it tracks the same control
                 const useFieldError = <T extends FieldValues = FieldValues>(control: Control<T>, name: string) => {
                     return useFormSelector(control, s => {
                         const touched = s.touchedFields?.[name]
@@ -87,11 +86,11 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
                     })
                 }
 
-
                 const touchedError = useFieldError(control, 'tags')
                 const error = useFormSelector(control, s => s.errors?.tags?.message);
+                const fieldsLength = useFormSelector(control, s => s.values.tags.length);
 
-                return { remove, trigger, error, touchedError, errors, getValues, fields };
+                return { remove, trigger, error, touchedError, getValues, fieldsLength };
             });
 
             await act(async () => {
@@ -100,7 +99,7 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
             });
 
             expect(result.current.touchedError).toBe(undefined);
-            expect(result.current.fields.length).toBe(1);
+            expect(result.current.fieldsLength).toBe(1);
             expect(result.current.error).toBe('Minimum length is 2');
         });
 
@@ -144,14 +143,12 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
 
             const initialRenderCount = renderCount;
 
-            // Change different field - no re-render
             act(() => {
                 formResult.current.setValue('unrelated', 'value');
             });
 
             expect(renderCount).toBe(initialRenderCount);
 
-            // Change array but first element stays same - should not re-render since the value subscribed to didn't change
             act(() => {
                 formResult.current.setValue('tags', ['react', 'new']);
             });
@@ -478,6 +475,31 @@ describe('Arrays and Nested Objects - Deep Testing', () => {
     });
 
     describe('Edge cases', () => {
+        it('should handle selecting two related paths', () => {
+            const { result: formResult } = renderHook(() => useForm<{
+                optional?: {
+                    nested: {
+                        deep: unknown
+                    }
+                }
+            }>({
+                defaultValues: { optional: undefined }
+            }));
+
+            const { result: nestedResult } = renderHook(() =>
+                useFormValue(formResult.current.control, 'optional.nested.deep')
+            );
+
+            const { result: oneLevelDeepResult } = renderHook(() =>
+                useFormSelector(formResult.current.control, (state) => {
+                    return state.values.optional
+                })
+            );
+
+            expect(oneLevelDeepResult.current).toBeUndefined();
+            expect(nestedResult.current).toBeUndefined();
+        });
+
         it('should handle undefined nested paths', () => {
             const { result: formResult } = renderHook(() => useForm<{
                 optional?: {
