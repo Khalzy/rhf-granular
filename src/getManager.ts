@@ -13,5 +13,5 @@ export function getManager<TFieldValues extends FieldValues = FieldValues>(
         return managers.get(control)!;
     }
 
-    return managers.get(control)!
+    return managers.get(control)!;
 }
