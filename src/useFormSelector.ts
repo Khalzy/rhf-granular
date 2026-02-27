@@ -107,8 +107,7 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
         lastResult.current = { value: newValue };
 
         return newValue;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [control])
+    }, [control, stableEqualityFn, stableSelector])
 
     const subscribe = useCallback((onStoreChange: () => void) => {
         if (!subscriberRef.current) {
@@ -141,8 +140,7 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
 
         const manager = getManager(control)
         return () => removeSubscriber(control, manager, subscriberRef)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [control])
+    }, [control, stableEqualityFn, stableSelector])
 
     return useSyncExternalStore(
         subscribe,

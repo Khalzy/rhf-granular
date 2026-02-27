@@ -7,6 +7,7 @@ import { PathMeta } from "./types/pathMeta";
 import { shallow } from "./utils/shallow";
 import { getManager } from "./getManager";
 import { removeSubscriber } from "./removeSubscriber";
+import { useStableRef } from "./hooks/useStableRef";
 /**
  * Execute side effects in response to form state changes without causing re-renders.
  * 
@@ -40,8 +41,7 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
         equalityFn?: EqualityFn<T>
     } = {}
 ): void {
-    const callbackRef = useRef(callback);
-    callbackRef.current = callback;
+    const callbackRef = useStableRef(callback);
 
     const subscriberRef = useRef<Subscriber<T, TFieldValues> | null>(null);
 
@@ -64,6 +64,7 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
     ) => {
         callbackRef.current(state)
         return null
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const stableSelector = useCallback((
@@ -108,6 +109,5 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
 
         const manager = getManager(control)
         return () => removeSubscriber(control, manager, subscriberRef)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [control]);
+    }, [control, equalityFn, options.selector, stableEffect, stableSelector]);
 }
