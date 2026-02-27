@@ -3,7 +3,7 @@ import { Subscriber, SubscriptionManager } from "./types/manager";
 import { RefObject } from "react";
 
 export function addSubscriberCallback<T, TFieldValues extends FieldValues = FieldValues>(
-    manager: SubscriptionManager<T, TFieldValues>,
+    manager: SubscriptionManager<TFieldValues>,
     subscriberRef: RefObject<Subscriber<T, TFieldValues> | null>
 ) {
     if (!subscriberRef.current) return

@@ -3,9 +3,9 @@ import { managers } from "./manager";
 import { createFormSubscription } from "./createFormSubscription";
 import { SubscriptionManager } from "./types/manager";
 
-export function getManager<T = unknown, TFieldValues extends FieldValues = FieldValues>(
+export function getManager<TFieldValues extends FieldValues = FieldValues>(
     control: Control<TFieldValues>
-): SubscriptionManager<T, TFieldValues> {
+): SubscriptionManager<TFieldValues> {
     if (!managers.has(control)) {
         const subscription = createFormSubscription(control)
         managers.set(control, subscription);

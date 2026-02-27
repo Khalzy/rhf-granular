@@ -3,9 +3,9 @@ import { Subscriber, SubscriptionManager } from "./types/manager"
 import { managers } from "./manager"
 import { RefObject } from "react"
 
-export function removeSubscriber<T, TFieldValues extends FieldValues = FieldValues>(
+export function removeSubscriber<TFieldValues extends FieldValues = FieldValues>(
     control: Control<TFieldValues>,
-    manager: SubscriptionManager<T, TFieldValues>,
+    manager: SubscriptionManager<TFieldValues>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscriber: RefObject<Subscriber<any, TFieldValues> | null>
 ) {

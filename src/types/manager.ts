@@ -18,8 +18,9 @@ export interface Subscriber<T, TFieldValues extends FieldValues = FieldValues> {
     selectorSource: 'user' | 'default'
 }
 
-export interface SubscriptionManager<T, TFieldValues extends FieldValues = FieldValues> {
-    subscribers: Map<() => void, RefObject<Subscriber<T, TFieldValues> | null>>
+export interface SubscriptionManager<TFieldValues extends FieldValues = FieldValues> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    subscribers: Map<() => void, RefObject<Subscriber<any, TFieldValues> | null>>
     unsubscribe: () => void;
     prev?: FieldValues
 }
