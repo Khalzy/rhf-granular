@@ -27,7 +27,7 @@
     "dist/useFormValue.d.ts"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@testing-library/react": "^16.3.2",
