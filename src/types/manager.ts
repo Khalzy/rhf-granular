@@ -20,7 +20,7 @@ export interface Subscriber<T, TFieldValues extends FieldValues = FieldValues> {
 
 export interface SubscriptionManager<TFieldValues extends FieldValues = FieldValues> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    subscribers: Map<() => void, RefObject<Subscriber<any, TFieldValues> | null>>
+    subscribers: Map<SubscriberCallback<TFieldValues>, RefObject<Subscriber<any, TFieldValues> | null>>
     unsubscribe: () => void;
     prev?: FieldValues
 }
