@@ -1,16 +1,17 @@
-import { useCallback, useRef, useSyncExternalStore } from "react";
-import { type Control, type FieldValues, type FormState } from "react-hook-form";
+import { addSubscriberCallback } from "./addSubscriberCallback";
 import { getManager } from "./getManager";
-import { useStableRef } from "./hooks/useStableRef";
+import { hasWatchedKeysChanged } from "./utils/hasWatchedKeysChanged";
+import { patchFormState } from "./utils/patchFormState";
+import { PathMeta } from "./types/pathMeta";
 import { registerSubscriber } from "./registerSubscriber";
 import { removeSubscriber } from "./removeSubscriber";
-import { selectWithProxy } from "./selectWIthProxy";
-import type { EqualityFn, Subscriber } from "./types/manager";
-import { PathMeta } from "./types/pathMeta";
-import { hasWatchedKeysChanged } from "./utils/hasWatchedKeysChanged";
+import { safeClone } from "./utils/safeClone";
 import { safeEquality } from "./utils/safeEquality";
-import { patchFormState } from "./utils/patchFormState";
-import { addSubscriberCallback } from "./addSubscriberCallback";
+import { selectWithProxy } from "./selectWIthProxy";
+import { type Control, type FieldValues, type FormState } from "react-hook-form";
+import { useCallback, useRef, useSyncExternalStore } from "react";
+import { useStableRef } from "./hooks/useStableRef";
+import type { EqualityFn, Subscriber } from "./types/manager";
 
 /**
  * Subscribe to a derived value from form state with equality-gated re-renders.
@@ -67,7 +68,7 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
         if (!subscriberRef.current) {
             const newValue = selectWithProxy(stableSelector, rawState, draftWatchedKeys, draftWatchedMeta)
 
-            lastSnapshotState.current = structuredClone(rawState)
+            lastSnapshotState.current = safeClone(rawState)
 
             if (stableEqualityFn(newValue, lastResult.current?.value)) {
                 return lastResult.current?.value
@@ -91,7 +92,7 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
 
         const newValue = selectWithProxy(stableSelector, rawState, watchedKeys, watchedMeta)
 
-        lastSnapshotState.current = structuredClone(rawState);
+        lastSnapshotState.current = safeClone(rawState);
 
         if (stableEqualityFn(newValue, lastResult.current?.value)) {
             return lastResult.current?.value;
@@ -105,9 +106,9 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
     const subscribe = useCallback((onStoreChange: () => void) => {
         if (!subscriberRef.current) {
             const initialState = patchFormState({
-                ...structuredClone(control._formState),
-                values: structuredClone(control._formValues),
-                defaultValues: structuredClone(control._defaultValues),
+                ...safeClone(control._formState),
+                values: safeClone(control._formValues),
+                defaultValues: safeClone(control._defaultValues),
             } as Partial<FormState<TFieldValues>> & { values: TFieldValues })
 
             const initialValue = selectWithProxy(stableSelector, initialState, watchedKeys, watchedMeta);

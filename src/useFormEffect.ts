@@ -1,15 +1,16 @@
-import { useEffect, useRef } from "react";
-import { type Control, type FieldValues, type FormState } from "react-hook-form";
+import { addSubscriberCallback } from "./addSubscriberCallback";
+import { EqualityFn, Subscriber } from "./types/manager";
 import { getManager } from "./getManager";
-import { useStableRef } from "./hooks/useStableRef";
+import { patchFormState } from "./utils/patchFormState";
+import { PathMeta } from "./types/pathMeta";
 import { registerSubscriber } from "./registerSubscriber";
 import { removeSubscriber } from "./removeSubscriber";
-import { selectWithProxy } from "./selectWIthProxy";
-import { EqualityFn, Subscriber } from "./types/manager";
-import { PathMeta } from "./types/pathMeta";
+import { safeClone } from "./utils/safeClone";
 import { safeEquality } from "./utils/safeEquality";
-import { patchFormState } from "./utils/patchFormState";
-import { addSubscriberCallback } from "./addSubscriberCallback";
+import { selectWithProxy } from "./selectWIthProxy";
+import { type Control, type FieldValues, type FormState } from "react-hook-form";
+import { useEffect, useRef } from "react";
+import { useStableRef } from "./hooks/useStableRef";
 /**
  * Execute side effects in response to form state changes without causing re-renders.
  * 
@@ -74,9 +75,9 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
     useEffect(() => {
         if (!subscriberRef.current) {
             const initialState = patchFormState({
-                ...structuredClone(control._formState),
-                values: structuredClone(control._formValues),
-                defaultValues: structuredClone(control._defaultValues),
+                ...safeClone(control._formState),
+                values: safeClone(control._formValues),
+                defaultValues: safeClone(control._defaultValues),
             } as Partial<FormState<TFieldValues>> & { values: TFieldValues })
 
             const stableSelectorOrEffect = options.selector ? stableSelector : stableEffect
