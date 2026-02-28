@@ -9,6 +9,7 @@ import { EqualityFn, Subscriber } from "./types/manager";
 import { PathMeta } from "./types/pathMeta";
 import { safeEquality } from "./utils/safeEquality";
 import { patchFormState } from "./utils/patchFormState";
+import { addSubscriberCallback } from "./addSubscriberCallback";
 /**
  * Execute side effects in response to form state changes without causing re-renders.
  * 
@@ -102,6 +103,8 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
         }
 
         const manager = getManager(control)
+        addSubscriberCallback(manager, subscriberRef)
+
         return () => removeSubscriber(control, manager, subscriberRef)
     }, [control, options.selector, stableEffect, stableEqualityFn, stableSelector]);
 }

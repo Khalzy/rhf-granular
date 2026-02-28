@@ -10,6 +10,7 @@ import { PathMeta } from "./types/pathMeta";
 import { hasWatchedKeysChanged } from "./utils/hasWatchedKeysChanged";
 import { safeEquality } from "./utils/safeEquality";
 import { patchFormState } from "./utils/patchFormState";
+import { addSubscriberCallback } from "./addSubscriberCallback";
 
 /**
  * Subscribe to a derived value from form state with equality-gated re-renders.
@@ -131,6 +132,8 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
         }
 
         const manager = getManager(control)
+        addSubscriberCallback(manager, subscriberRef)
+
         return () => removeSubscriber(control, manager, subscriberRef)
     }, [control, stableEqualityFn, stableSelector])
 
