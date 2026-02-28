@@ -1,14 +1,14 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
 import { type Control, type FieldValues, type FormState } from "react-hook-form";
+import { getManager } from "./getManager";
 import { useStableRef } from "./hooks/useStableRef";
 import { registerSubscriber } from "./registerSubscriber";
+import { removeSubscriber } from "./removeSubscriber";
 import { selectWithProxy } from "./selectWIthProxy";
 import type { EqualityFn, Subscriber } from "./types/manager";
 import { PathMeta } from "./types/pathMeta";
-import { getManager } from "./getManager";
-import { removeSubscriber } from "./removeSubscriber";
 import { hasWatchedKeysChanged } from "./utils/hasWatchedKeysChanged";
-import { shallow } from "./utils/shallow";
+import { safeEquality } from "./utils/safeEquality";
 
 /**
  * Subscribe to a derived value from form state with equality-gated re-renders.
@@ -31,8 +31,10 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
         equalityFn?: EqualityFn<T>,
     }
 ): T | undefined {
-    const selectorRef = useStableRef(selector);
-    const equalityRef = useStableRef(options?.equalityFn ?? shallow);
+    const stableSelector = useStableRef(selector);
+    const stableEqualityFn = useStableRef<[T | undefined | null, T | undefined | null], boolean>(
+        (a, b) => safeEquality(a, b, options?.equalityFn)
+    );
 
     const watchedMeta = useRef<Map<string, PathMeta>>(new Map());
     const watchedKeys = useRef<Set<string>>(new Set());
@@ -52,16 +54,6 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
         ...control._formState,
         values: control._formValues as TFieldValues,
     });
-
-    const stableSelector = useCallback(
-        (
-            state: Partial<FormState<TFieldValues>> & { values: TFieldValues }
-        ): T => selectorRef.current(state),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [])
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const stableEqualityFn: EqualityFn<T> = useCallback((a, b) => equalityRef.current(a, b), [])
 
     const getSnapshot = useCallback((): T | undefined => {
         const rawState = {
@@ -90,7 +82,6 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
             rawState,
             lastSnapshotState,
         )
-
 
         if (!shouldNotify) {
             return lastResult.current?.value;

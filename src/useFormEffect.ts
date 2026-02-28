@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { type Control, type FieldValues, type FormState } from "react-hook-form";
+import { getManager } from "./getManager";
+import { useStableRef } from "./hooks/useStableRef";
 import { registerSubscriber } from "./registerSubscriber";
+import { removeSubscriber } from "./removeSubscriber";
 import { selectWithProxy } from "./selectWIthProxy";
 import { EqualityFn, Subscriber } from "./types/manager";
 import { PathMeta } from "./types/pathMeta";
-import { shallow } from "./utils/shallow";
-import { getManager } from "./getManager";
-import { removeSubscriber } from "./removeSubscriber";
-import { useStableRef } from "./hooks/useStableRef";
+import { safeEquality } from "./utils/safeEquality";
 /**
  * Execute side effects in response to form state changes without causing re-renders.
  * 
@@ -41,15 +41,25 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
         equalityFn?: EqualityFn<T>
     } = {}
 ): void {
-    const callbackRef = useStableRef(callback);
+    const stableEffect = useStableRef<[
+        Partial<FormState<TFieldValues>> & { values: TFieldValues }
+    ], undefined>((args) => {
+        void callback(args)
+        return undefined
+    });
+
+    const stableSelector = useStableRef<[
+        Partial<FormState<TFieldValues>> & { values: TFieldValues }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ], any>((args) => {
+        if (options.selector) options.selector(args)
+        return args
+    });
+    const stableEqualityFn = useStableRef<[T | undefined | null, T | undefined | null], boolean>(
+        (a, b) => safeEquality(a, b, options?.equalityFn)
+    );
 
     const subscriberRef = useRef<Subscriber<T, TFieldValues> | null>(null);
-
-    const stableSelectorRef = useRef(options?.selector);
-    stableSelectorRef.current = options?.selector;
-
-    const stableEqualityFnRef = useRef(options?.equalityFn ?? shallow);
-    stableEqualityFnRef.current = options?.equalityFn ?? shallow;
 
     const lastEffectState = useRef<Partial<FormState<TFieldValues>> & { values: TFieldValues }>({
         ...control._formState,
@@ -58,23 +68,6 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
 
     const watchedKeys = useRef<Set<string>>(new Set());
     const watchedMeta = useRef<Map<string, PathMeta>>(new Map());
-
-    const stableEffect = useCallback((
-        state?: Partial<FormState<TFieldValues>> & { values: TFieldValues }
-    ) => {
-        callbackRef.current(state)
-        return null
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    const stableSelector = useCallback((
-        state: Partial<FormState<TFieldValues>> & { values: TFieldValues }
-    ) => stableSelectorRef?.current?.(state), [])
-
-
-    const equalityFn = useCallback((
-        a?: T, b?: T | null
-    ): boolean => stableEqualityFnRef.current(a, b) ?? true, [])
 
     useEffect(() => {
         if (!subscriberRef.current) {
@@ -93,7 +86,7 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
             subscriberRef.current = {
                 callback: stableEffect,
                 selector: stableSelector,
-                equalityFn: equalityFn,
+                equalityFn: stableEqualityFn,
                 watchedKeys,
                 watchedMeta,
                 lastValue: initialValue,
@@ -109,5 +102,5 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
 
         const manager = getManager(control)
         return () => removeSubscriber(control, manager, subscriberRef)
-    }, [control, equalityFn, options.selector, stableEffect, stableSelector]);
+    }, [control, options.selector, stableEffect, stableEqualityFn, stableSelector]);
 }
