@@ -8,5 +8,6 @@ export function addSubscriberCallback<T, TFieldValues extends FieldValues = Fiel
 ) {
     if (!subscriberRef.current) return
 
+    if (manager.subscribers.has(subscriberRef.current.callback)) return
     manager.subscribers.set(subscriberRef.current.callback, subscriberRef)
 }
