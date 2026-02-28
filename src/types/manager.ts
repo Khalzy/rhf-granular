@@ -2,9 +2,9 @@ import { RefObject } from "react";
 import type { FieldValues, FormState } from "react-hook-form";
 import { PathMeta } from "./pathMeta";
 
-export type EqualityFn<T> = (a?: T, b?: T | null) => boolean;
+export type EqualityFn<T> = (a: T, b: T) => boolean;
 
-export type SubscriberCallback<TFieldValues extends FieldValues = FieldValues> = ((state?: Partial<FormState<TFieldValues>> & { values: TFieldValues }) => void)
+export type SubscriberCallback<TFieldValues extends FieldValues = FieldValues> = ((state: Partial<FormState<TFieldValues>> & { values: TFieldValues }) => void)
 
 export interface Subscriber<T, TFieldValues extends FieldValues = FieldValues> {
     callback: SubscriberCallback<TFieldValues>
