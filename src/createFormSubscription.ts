@@ -4,6 +4,8 @@ import { Subscriber } from "./types/manager";
 import { hasWatchedKeysChanged } from "./utils/hasWatchedKeysChanged";
 import { shallow } from "./utils/shallow";
 import { RefObject } from "react";
+import { patchFormState } from "./utils/patchFormState";
+import { safeEquality } from "./utils/safeEquality";
 
 export function createFormSubscription<T, TFieldValues extends FieldValues = FieldValues>(
     control: Control<TFieldValues>
@@ -22,31 +24,32 @@ export function createFormSubscription<T, TFieldValues extends FieldValues = Fie
             validatingFields: true,
         },
         callback: (formState) => {
+            const patchedFormState = patchFormState(formState)
+
             subscribers.forEach((subscriber) => {
                 const sub = subscriber.current
 
                 const shouldNotify = hasWatchedKeysChanged(
                     sub.watchedKeys,
                     sub.watchedMeta,
-                    formState,
+                    patchedFormState,
                     sub.lastFormState
                 )
 
                 if (shouldNotify) {
-                    const newValue = selectWithProxy(sub.selector, formState, sub.watchedKeys, sub.watchedMeta)
-                    const equalityFn = sub?.equalityFn ?? shallow;
+                    const newValue = selectWithProxy(sub.selector, patchedFormState, sub.watchedKeys, sub.watchedMeta)
 
-                    sub.lastFormState.current = formState;
+                    sub.lastFormState.current = patchedFormState;
 
                     if (sub.type === 'effect' && sub.selectorSource === 'default') {
-                        sub.callback?.(formState)
+                        sub.callback?.(patchedFormState)
                     }
 
-                    if (sub.selectorSource === 'user' && !equalityFn(newValue, sub.lastValue)) {
+                    if (sub.selectorSource === 'user' && !safeEquality(newValue, sub.lastValue, sub?.equalityFn ?? shallow)) {
                         sub.lastValue = newValue;
 
-                        if (sub.type === 'effect') sub.callback?.(formState)
-                        if (sub.type === 'value') sub.callback?.()
+                        if (sub.type === 'effect') sub.callback?.(patchedFormState)
+                        if (sub.type === 'value') sub.callback?.(patchedFormState)
                     }
                 }
 

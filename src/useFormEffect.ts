@@ -8,6 +8,7 @@ import { selectWithProxy } from "./selectWIthProxy";
 import { EqualityFn, Subscriber } from "./types/manager";
 import { PathMeta } from "./types/pathMeta";
 import { safeEquality } from "./utils/safeEquality";
+import { patchFormState } from "./utils/patchFormState";
 /**
  * Execute side effects in response to form state changes without causing re-renders.
  * 
@@ -71,11 +72,11 @@ export function useFormEffect<T, TFieldValues extends FieldValues = FieldValues>
 
     useEffect(() => {
         if (!subscriberRef.current) {
-            const initialState = {
+            const initialState = patchFormState({
                 ...structuredClone(control._formState),
-                values: structuredClone(control._formValues) as unknown as TFieldValues,
-                defaultValues: structuredClone(control._defaultValues) as unknown as TFieldValues
-            } as Partial<FormState<TFieldValues>> & { values: TFieldValues };
+                values: structuredClone(control._formValues),
+                defaultValues: structuredClone(control._defaultValues),
+            } as Partial<FormState<TFieldValues>> & { values: TFieldValues })
 
             const stableSelectorOrEffect = options.selector ? stableSelector : stableEffect
 

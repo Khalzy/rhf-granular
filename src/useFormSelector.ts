@@ -9,6 +9,7 @@ import type { EqualityFn, Subscriber } from "./types/manager";
 import { PathMeta } from "./types/pathMeta";
 import { hasWatchedKeysChanged } from "./utils/hasWatchedKeysChanged";
 import { safeEquality } from "./utils/safeEquality";
+import { patchFormState } from "./utils/patchFormState";
 
 /**
  * Subscribe to a derived value from form state with equality-gated re-renders.
@@ -56,11 +57,11 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
     });
 
     const getSnapshot = useCallback((): T | undefined => {
-        const rawState = {
+        const rawState = patchFormState({
             ...control._formState,
             values: control._formValues,
             defaultValues: control._defaultValues
-        } as Partial<FormState<TFieldValues>> & { values: TFieldValues }
+        } as Partial<FormState<TFieldValues>> & { values: TFieldValues })
 
         if (!subscriberRef.current) {
             const newValue = selectWithProxy(stableSelector, rawState, draftWatchedKeys, draftWatchedMeta)
@@ -102,11 +103,11 @@ export function useFormSelector<T, TFieldValues extends FieldValues = FieldValue
 
     const subscribe = useCallback((onStoreChange: () => void) => {
         if (!subscriberRef.current) {
-            const initialState = {
+            const initialState = patchFormState({
                 ...structuredClone(control._formState),
                 values: structuredClone(control._formValues),
-                defaultValues: structuredClone(control._defaultValues)
-            } as Partial<FormState<TFieldValues>> & { values: TFieldValues }
+                defaultValues: structuredClone(control._defaultValues),
+            } as Partial<FormState<TFieldValues>> & { values: TFieldValues })
 
             const initialValue = selectWithProxy(stableSelector, initialState, watchedKeys, watchedMeta);
 
