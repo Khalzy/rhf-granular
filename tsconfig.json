@@ -5,6 +5,9 @@
             "ES2020",
             "DOM"
         ],
+        "types": [
+            "vitest/globals"
+        ],
         "module": "ESNext",
         "moduleResolution": "bundler",
         "jsx": "react-jsx",
