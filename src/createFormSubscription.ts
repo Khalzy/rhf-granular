@@ -51,6 +51,25 @@ export function createFormSubscription<T, TFieldValues extends FieldValues = Fie
                         if (sub.type === 'effect') sub.callback?.(patchedFormState)
                         if (sub.type === 'value') sub.callback?.(patchedFormState)
                     }
+                } else {
+                    const isMissingWatchedKeys = sub.watchedKeys.current.size === 0 && sub.watchedMeta.current.size === 0
+
+                    if (sub.type === 'effect' && isMissingWatchedKeys) {
+                        const stableSelectorOrEffect = sub.selectorSource === 'user' ? sub.selector : sub.callback
+
+                        selectWithProxy(stableSelectorOrEffect, patchedFormState, sub.watchedKeys, sub.watchedMeta)
+
+                        const shouldNotifyEffect = hasWatchedKeysChanged(
+                            sub.watchedKeys,
+                            sub.watchedMeta,
+                            patchedFormState,
+                            sub.lastFormState
+                        )
+
+                        if (shouldNotifyEffect && sub.selectorSource === 'default') {
+                            sub.callback?.(patchedFormState)
+                        }
+                    }
                 }
 
             });
