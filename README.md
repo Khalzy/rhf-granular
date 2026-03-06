@@ -30,28 +30,25 @@ rather than a replacement. The gaps it fills:
 - **Proxy-based auto-discovery** — no need to declare a `name` array upfront. The selector
   runs through a proxy and dependencies are tracked automatically.
 
-### Derived Values, Fewer Re-renders
+### Side-Effects without the Render Cycle
 
-Standard `useWatch` triggers a re-render every time a field changes. `useFormSelector`
-allows you to derive data and only re-renders if the result of that derivation changes.
+Sometimes you need to trigger an API call or analytics event when a form value changes,
+but you don't need to display that value.
 
+- **Standard way:** `useEffect` + `useWatch` = Render -> Effect -> Render
+- **Granular way:** `useFormEffect` = Effect, no render
 ```tsx
-// Re-renders on every keystroke in the 'plan' field
-const { plan } = useWatch({ control });
-const isEnterprise = plan === "enterprise";
-
-// Only re-renders when 'plan' flips to/from 'enterprise'
-const isEnterprise = useFormSelector(
-  control,
-  (s) => s.values.plan === "enterprise"
-);
+useFormEffect(control, ({ values, isDirty }) => {
+  if (values.plan === "enterprise" && isDirty) {
+    trackEvent("enterprise_plan_edited");
+  }
+});
 ```
 
 ### Computed Values without Boilerplate
 
 Calculating totals or conditional logic usually requires a `useMemo` wrapped around
 a `useWatch`. `rhf-granular` handles this internally, keeping your component logic clean.
-
 ```tsx
 // Manual memoization
 const { plan, seats } = useWatch({ control });
@@ -67,21 +64,47 @@ const price = useFormSelector(control, ({ values }) => {
 });
 ```
 
-### Side-Effects without the Render Cycle
+### Derived Values, Fewer Re-renders
 
-Sometimes you need to trigger an API call or analytics event when a form value changes,
-but you don't need to display that value.
-
-- **Standard way:** `useEffect` + `useWatch` = Render -> Effect -> Render
-- **Granular way:** `useFormEffect` = Effect, no render
-
+Standard `useWatch` triggers a re-render every time a field changes. `useFormSelector`
+allows you to derive data and only re-renders if the result of that derivation changes.
 ```tsx
-useFormEffect(control, ({ values, isDirty }) => {
-  if (values.plan === "enterprise" && isDirty) {
-    trackEvent("enterprise_plan_edited");
-  }
-});
+// Re-renders on every keystroke in the 'plan' field
+const { plan } = useWatch({ control });
+const isEnterprise = plan === "enterprise";
+
+// Only re-renders when 'plan' flips to/from 'enterprise'
+const isEnterprise = useFormSelector(
+  control,
+  (s) => s.values.plan === "enterprise"
+);
 ```
+
+### Combining form meta with field values
+
+A common pattern is combining `formState` with `useWatch` for derived UI state:
+```tsx
+// ⚠️ Two independent subscriptions — re-renders when either changes
+// even if showWarning itself doesn't change
+const { formState: { isDirty, isValid } } = useFormContext()
+const isEnterprise = useWatch({ 
+  control, 
+  name: 'plan',
+  compute: (plan) => plan === 'enterprise'
+})
+const showWarning = isDirty && !isValid && isEnterprise
+```
+
+Potential problem:
+- `formState` and `useWatch` are independent subscriptions that fire separately
+- The component re-renders when either changes, even if `showWarning` doesn't
+```tsx
+// One subscription, one snapshot, only re-renders if showWarning changes
+const showWarning = useFormSelector(control, s =>
+  s.values.plan === 'enterprise' && s.isDirty && !s.isValid
+)
+```
+
 
 ## Hooks
 
