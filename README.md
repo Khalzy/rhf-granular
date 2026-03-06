@@ -18,6 +18,18 @@ Standard `react-hook-form` is fast, but `watch` and `useWatch` can be blunt inst
 When you watch a field, the entire component re-renders, even if the value you actually
 care about hasn't changed.
 
+`useWatch` has a `compute` option for derived field values. `rhf-granular` is complementary
+rather than a replacement. The gaps it fills:
+
+- **Form-wide selectors** — access `values`, `errors`, `isSubmitting`, `isValidating` and
+  other form meta together in one selector. `compute` only receives field values.
+- **`getFieldState` without `useController`** — read `isTouched`, `isDirty`, `error` for
+  a field without a controlled input.
+- **`useFormEffect`** — side effects on form state changes without touching the render
+  cycle at all. No `useEffect` + `useWatch` needed.
+- **Proxy-based auto-discovery** — no need to declare a `name` array upfront. The selector
+  runs through a proxy and dependencies are tracked automatically.
+
 ### Derived Values, Fewer Re-renders
 
 Standard `useWatch` triggers a re-render every time a field changes. `useFormSelector`
